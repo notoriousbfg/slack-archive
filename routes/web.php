@@ -11,6 +11,10 @@
 |
 */
 
-$router->get('/', function () use ($router) {
-    return $router->app->version();
-});
+$router->get('/', 'AppController@home');
+
+$router->get('/slack/authorize', 'SlackController@authorizeSlack');
+
+$router->get('/slack/redirect', 'SlackController@redirect');
+
+$router->post('/slack/archive', 'SlackController@archive');
