@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 
 use GuzzleHttp\Client as Guzzle;
+use Elasticsearch\ClientBuilder;
 
 class SlackController extends Controller
 {
@@ -12,11 +13,15 @@ class SlackController extends Controller
     private $clientSecret;
     private $redirectUri;
 
+    private $searchIndex;
+
     public function __construct()
     {
         $this->clientId = env('SLACK_CLIENT_ID');
         $this->clientSecret = env('SLACK_CLIENT_SECRET');
         $this->redirectUri = env('SLACK_CLIENT_REDIRECT_URI');
+        
+        $this->searchIndex = env('ELASTICSEARCH_INDEX');
     }
 
     public function authorizeSlack()
@@ -50,8 +55,6 @@ class SlackController extends Controller
                 'team_id' => $response_body['team_id'],
             ];
 
-            \Log::info('Slack redirect', [ 'response' => $response_body ]);
-
             return redirect('/');
         }
 
@@ -60,7 +63,14 @@ class SlackController extends Controller
     
     public function archive(Request $request)
     {
-        \Log::info('Slack archive:', ['message' => $request->all()]);
+        $payload = $request->input('payload');
+        
+        $client = ClientBuilder::create()->build();
+
+        $client->index([
+            'index' => $this->searchIndex,
+            'body' => json_decode($payload)
+        ]);
 
         return response()->json([
             'status' => 200
